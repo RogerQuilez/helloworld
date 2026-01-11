@@ -105,35 +105,32 @@ pipeline {
                         catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                             unstash name:'code'
                             bat """
-                                REM Generar reporte de cobertura
-                                C:\\Python311\\Scripts\\coverage.exe report -m > cov_report.txt
+                                REM Usar el coverage.xml generado por las pruebas unitarias
+                                REM Extraer porcentaje de lineas
+                                for /F "tokens=2 delims==\"" %%L in ('findstr /R "<line-rate>" coverage.xml') do set /A lineCovPercent=%%L*100
 
-                                REM Extraer porcentaje de línea (sin %)
-                                for /F "tokens=4" %%L in ('findstr /R /C:"TOTAL" cov_report.txt') do set lineCov=%%L
-                                set lineCovPercent=%lineCov:%%=%
+                                REM Extraer porcentaje de ramas
+                                for /F "tokens=2 delims==\"" %%L in ('findstr /R "<branch-rate>" coverage.xml') do set /A branchCovPercent=%%L*100
 
-                                REM Para simplificar, branch = line
-                                set branchCovPercent=%lineCovPercent%
-
-                                REM Inicializar
+                                REM Inicializar estados
                                 set exitCode=0
                                 set lineStatus=GREEN
                                 set branchStatus=GREEN
 
-                                REM Evaluar líneas
+                                REM Evaluar coverage de lineas
                                 if %lineCovPercent% LSS 85 (
                                     set exitCode=2
                                     set lineStatus=RED
-                                ) else if %lineCovPercent% LEQ 94 (
+                                ) else if %lineCovPercent% LEQ 95 (
                                     set exitCode=1
                                     set lineStatus=UNSTABLE
                                 )
 
-                                REM Evaluar ramas
+                                REM Evaluar coverage de ramas
                                 if %branchCovPercent% LSS 80 (
                                     set exitCode=2
                                     set branchStatus=RED
-                                ) else if %branchCovPercent% LEQ 89 (
+                                ) else if %branchCovPercent% LEQ 90 (
                                     if %exitCode% NEQ 2 set exitCode=1
                                     set branchStatus=UNSTABLE
                                 )
@@ -142,6 +139,7 @@ pipeline {
                                 echo Cobertura lineas: %lineCovPercent%% (%lineStatus%)
                                 echo Cobertura ramas: %branchCovPercent%% (%branchStatus%)
 
+                                REM Devolver código de salida según thresholds
                                 exit /b %exitCode%
                             """
                         }
