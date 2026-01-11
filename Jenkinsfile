@@ -137,6 +137,9 @@ pipeline {
                         catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                             unstash name: 'code'
                             bat """
+                                REM Crear el directorio si no existe
+                                if not exist test\\performance mkdir test\\performance
+
                                 REM Levantar Flask en segundo plano (si no está levantado, comentar esta parte)
                                 set FLASK_APP=app\\api.py
                                 start /B C:\\Python311\\Scripts\\flask.exe run
@@ -144,12 +147,10 @@ pipeline {
                                 ping 127.0.0.1 -n 10 > nul
 
                                 REM Ejecutar JMeter con test-plan predefinido
-                                REM test-plan.jmx debe estar configurado para:
-                                REM 5 threads, 40 llamadas a /sum y 40 a /subtract
-                                C:\\apache-jmeter-5.6.3\\bin\\jmeter.bat -n -t test\\performance\\test-plan.jmx -l result-performance.jtl
+                                C:\\apache-jmeter-5.6.3\\bin\\jmeter.bat -n -t test\\performance\\test-plan.jmx -l test\\performance\\result-performance.jtl
 
                                 REM Convertir resultados a HTML para el plugin de Jenkins
-                                C:\\apache-jmeter-5.6.3\\bin\\JMeterPluginsCMD.bat --generate-png test\\performance\\performance.png --input-jtl result-performance.jtl --plugin-type AggregateReport
+                                C:\\apache-jmeter-5.6.3\\bin\\JMeterPluginsCMD.bat --generate-png test\\performance\\performance.png --input-jtl test\\performance\\result-performance.jtl --plugin-type AggregateReport
                             """
                         }
                     }
