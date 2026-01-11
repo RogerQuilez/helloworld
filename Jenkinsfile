@@ -8,14 +8,22 @@ pipeline {
 
     stages {
 
-        stage('Unit') {
+        stage('Setup') {
             steps {
                 sh '''
+                    # Crear virtualenv solo una vez
                     python3 -m venv $VENV
-                    . $VENV/bin/activate
-                    pip install --upgrade pip
-                    pip install pytest
-                    pytest test/unit --junitxml=unit-results.xml
+                    $VENV/bin/pip install --upgrade pip
+                '''
+            }
+        }
+
+        stage('Unit Tests') {
+            steps {
+                sh '''
+                    # Instalar pytest y ejecutar tests unitarios
+                    $VENV/bin/pip install pytest
+                    $VENV/bin/pytest test/unit --junitxml=$PWD/unit-results.xml
                 '''
             }
             post {
@@ -25,12 +33,12 @@ pipeline {
             }
         }
 
-        stage('Rest') {
+        stage('REST Tests') {
             steps {
                 sh '''
-                    . $VENV/bin/activate
-                    pip install pytest requests
-                    pytest test/rest --junitxml=rest-results.xml
+                    # Instalar pytest y requests
+                    $VENV/bin/pip install pytest requests
+                    $VENV/bin/pytest test/rest --junitxml=$PWD/rest-results.xml
                 '''
             }
             post {
@@ -40,12 +48,12 @@ pipeline {
             }
         }
 
-        stage('Static') {
+        stage('Static Analysis') {
             steps {
                 sh '''
-                    . $VENV/bin/activate
-                    pip install flake8
-                    flake8 app
+                    # Instalar flake8 y analizar código
+                    $VENV/bin/pip install flake8
+                    $VENV/bin/flake8 app
                 '''
             }
         }
@@ -53,9 +61,9 @@ pipeline {
         stage('Security Test') {
             steps {
                 sh '''
-                    . $VENV/bin/activate
-                    pip install bandit
-                    bandit -r app
+                    # Instalar bandit y analizar seguridad
+                    $VENV/bin/pip install bandit
+                    $VENV/bin/bandit -r app
                 '''
             }
         }
@@ -65,11 +73,11 @@ pipeline {
                 sh '''
                     mkdir -p jmeter-results
                     $JMETER_HOME/bin/jmeter \
-                      -n \
-                      -t test/jmeter/flask.jmx \
-                      -l jmeter-results/results.jtl \
-                      -e \
-                      -o jmeter-results/report
+                        -n \
+                        -t test/jmeter/flask.jmx \
+                        -l jmeter-results/results.jtl \
+                        -e \
+                        -o jmeter-results/report
                 '''
             }
             post {
@@ -86,10 +94,9 @@ pipeline {
         stage('Coverage') {
             steps {
                 sh '''
-                    . $VENV/bin/activate
-                    pip install coverage pytest
-                    coverage run -m pytest
-                    coverage html
+                    $VENV/bin/pip install coverage pytest
+                    $VENV/bin/coverage run -m pytest
+                    $VENV/bin/coverage html
                 '''
             }
             post {
@@ -106,6 +113,7 @@ pipeline {
 
     post {
         always {
+            # Limpiar virtualenv al final
             sh 'rm -rf venv'
         }
     }
