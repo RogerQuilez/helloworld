@@ -24,14 +24,14 @@ pipeline {
             parallel
             {
                 stage('Unit') {
-                    agent {label 'agent1'}
+                    agent {label 'linux-agent'}
                     steps {
                         catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                             unstash name:'code'
                             sh '''
                                 ls -la
                                 export PYTHONPATH=${WORKSPACE}
-                                /home/agent1/.local/bin/pytest --junitxml=result-unit.xml test/unit
+                                /home/linux-agent/.local/bin/pytest --junitxml=result-unit.xml test/unit
                             '''
                             stash name:'unit-res', includes:'result-unit.xml'
                        }
@@ -40,7 +40,7 @@ pipeline {
 
 
                 stage('Rest') {
-                    agent {label 'agent1'}
+                    agent {label 'linux-agent'}
                     steps {
                       catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                         unstash name:'code'
