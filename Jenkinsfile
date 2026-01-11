@@ -105,27 +105,24 @@ pipeline {
                         catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                             unstash name: 'code'
                             bat """
-                                REM Ejecutar script de PowerShell para leer coverage.xml y aplicar thresholds
-                                powershell -NoProfile -Command "& {
-                                    \$xml = [xml](Get-Content 'coverage.xml');
-                                    \$line = [math]::Round((\$xml.coverage.'line-rate' * 100),0);
-                                    \$branch = [math]::Round((\$xml.coverage.'branch-rate' * 100),0);
+                                REM Crear script PowerShell temporal
+                                echo \$xml = [xml](Get-Content 'coverage.xml') > check_coverage.ps1
+                                echo \$line = [math]::Round((\$xml.coverage.'line-rate' * 100),0) >> check_coverage.ps1
+                                echo \$branch = [math]::Round((\$xml.coverage.'branch-rate' * 100),0) >> check_coverage.ps1
+                                echo \$exitCode = 0 >> check_coverage.ps1
+                                echo \$lineStatus = 'GREEN' >> check_coverage.ps1
+                                echo \$branchStatus = 'GREEN' >> check_coverage.ps1
+                                echo if (\$line -lt 85) { \$exitCode = 2; \$lineStatus='RED' } elseif (\$line -le 95) { \$exitCode = 1; \$lineStatus='UNSTABLE' } >> check_coverage.ps1
+                                echo if (\$branch -lt 80) { \$exitCode = 2; \$branchStatus='RED' } elseif (\$branch -le 90) { if (\$exitCode -ne 2) { \$exitCode=1 }; \$branchStatus='UNSTABLE' } >> check_coverage.ps1
+                                echo Write-Output ('Cobertura lineas: {0}%% ({1})' -f \$line,\$lineStatus) >> check_coverage.ps1
+                                echo Write-Output ('Cobertura ramas: {0}%% ({1})' -f \$branch,\$branchStatus) >> check_coverage.ps1
+                                echo exit \$exitCode >> check_coverage.ps1
 
-                                    \$exitCode = 0;
-                                    \$lineStatus = 'GREEN';
-                                    \$branchStatus = 'GREEN';
+                                REM Ejecutar el script PowerShell
+                                powershell -NoProfile -ExecutionPolicy Bypass -File check_coverage.ps1
 
-                                    if (\$line -lt 85) { \$exitCode = 2; \$lineStatus='RED' }
-                                    elseif (\$line -le 95) { \$exitCode = 1; \$lineStatus='UNSTABLE' }
-
-                                    if (\$branch -lt 80) { \$exitCode = 2; \$branchStatus='RED' }
-                                    elseif (\$branch -le 90) { if (\$exitCode -ne 2) { \$exitCode=1 }; \$branchStatus='UNSTABLE' }
-
-                                    Write-Output ('Cobertura lineas: {0}% ({1})' -f \$line,\$lineStatus);
-                                    Write-Output ('Cobertura ramas: {0}% ({1})' -f \$branch,\$branchStatus);
-
-                                    exit \$exitCode
-                                }"
+                                REM Borrar el script temporal
+                                del check_coverage.ps1
                             """
                         }
                     }
