@@ -38,7 +38,7 @@ pipeline {
             steps {
                 bat """
                     REM Levantar la app Flask en background
-                    start /B %VENV%\\Scripts\\python.exe app\\app.py
+                    start /B %VENV%\\Scripts\\python.exe app\\api.py
                     REM Esperar unos segundos para que el servidor arranque
                     timeout /t 5 /nobreak
                 """
