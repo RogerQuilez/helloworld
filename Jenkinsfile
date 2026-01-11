@@ -22,7 +22,7 @@ pipeline {
             steps {
                 bat """
                     REM Instalar pytest y ejecutar tests unitarios
-                    %VENV%\\Scripts\\pip.exe install pytest
+                    %VENV%\\Scripts\\python.exe -m pip install pytest
                     %VENV%\\Scripts\\python.exe -m pytest test\\unit --junitxml="%CD%\\unit-results.xml"
                 """
             }
@@ -36,9 +36,9 @@ pipeline {
         stage('REST Tests') {
             steps {
                 bat """
-                    REM Instalar pytest y requests
-                    %VENV%\\Scripts\\pip.exe install pytest requests
-                    %VENV%\\Scripts\\python.exe -m pytest test\\rest --junitxml=%CD%\\rest-results.xml
+                    REM Instalar pytest y requests y ejecutar tests REST
+                    %VENV%\\Scripts\\python.exe -m pip install pytest requests
+                    %VENV%\\Scripts\\python.exe -m pytest test\\rest --junitxml="%CD%\\rest-results.xml"
                 """
             }
             post {
@@ -52,7 +52,7 @@ pipeline {
             steps {
                 bat """
                     REM Instalar flake8 y analizar código
-                    %VENV%\\Scripts\\pip.exe install flake8
+                    %VENV%\\Scripts\\python.exe -m pip install flake8
                     %VENV%\\Scripts\\python.exe -m flake8 app
                 """
             }
@@ -62,7 +62,7 @@ pipeline {
             steps {
                 bat """
                     REM Instalar bandit y analizar seguridad
-                    %VENV%\\Scripts\\pip.exe install bandit
+                    %VENV%\\Scripts\\python.exe -m pip install bandit
                     %VENV%\\Scripts\\bandit -r app
                 """
             }
@@ -71,8 +71,9 @@ pipeline {
         stage('Performance') {
             steps {
                 bat """
+                    REM Ejecutar tests de rendimiento con JMeter
                     mkdir jmeter-results
-                    %JMETER_HOME%\\bin\\jmeter.bat -n -t test\\jmeter\\flask.jmx -l jmeter-results\\results.jtl -e -o jmeter-results\\report
+                    "%JMETER_HOME%\\bin\\jmeter.bat" -n -t test\\jmeter\\flask.jmx -l jmeter-results\\results.jtl -e -o jmeter-results\\report
                 """
             }
             post {
@@ -90,7 +91,7 @@ pipeline {
             steps {
                 bat """
                     REM Instalar coverage y generar reporte
-                    %VENV%\\Scripts\\pip.exe install coverage pytest
+                    %VENV%\\Scripts\\python.exe -m pip install coverage pytest
                     %VENV%\\Scripts\\python.exe -m coverage run -m pytest
                     %VENV%\\Scripts\\python.exe -m coverage html
                 """
@@ -110,6 +111,7 @@ pipeline {
     post {
         always {
             bat """
+                REM Limpiar virtualenv
                 rmdir /s /q %VENV%
             """
         }
