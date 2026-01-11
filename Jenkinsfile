@@ -23,7 +23,7 @@ pipeline {
                             dir
                             set PYTHONPATH=%WORKSPACE%
                             REM Ejecutar pytest unitarias, pero siempre devolver 0 para que la etapa quede verde
-                            C:\\Python311\\Scripts\\pytest.exe --junitxml=result-unit.xml test\\unit || exit /b 0
+                            C:\\Python311\\Scripts\\pytest.exe --junitxml=result-unit.xml --cov=app --cov-report=xml test\\unit || exit /b 0
                         """
                         stash name:'unit-res', includes:'result-unit.xml'
                     }
@@ -84,7 +84,7 @@ pipeline {
                                 for /F %%L in ('type bandit_report.txt ^| find /C "Issue:"') do set count=%%L
                                 echo Issues de seguridad encontrados: %count%
 
-                                REM Evaluar resultados según umbrales
+                                REM Evaluar resultados segun umbrales
                                 if %count% GEQ 4 (
                                     exit /b 2
                                 ) else (
@@ -94,6 +94,40 @@ pipeline {
                                         exit /b 0
                                     )
                                 )
+                            """
+                        }
+                    }
+                }
+
+                stage('Coverage') {
+                    agent { label 'windows-agent' }
+                    steps {
+                        catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+                            unstash name:'code'
+                            bat """
+                                REM Generar reporte de cobertura
+                                C:\\Python311\\Scripts\\coverage.exe xml -o coverage.xml
+
+                                REM Extraer porcentaje de cobertura de líneas
+                                for /F "tokens=4 delims= " %%L in ('type coverage.xml ^| find "<line-rate>"') do set lineCov=%%L
+                                REM Extraer porcentaje de cobertura de ramas
+                                for /F "tokens=4 delims= " %%B in ('type coverage.xml ^| find "<branch-rate>"') do set branchCov=%%B
+
+                                REM Convertir de decimal a porcentaje entero (ej: 0.92 -> 92)
+                                set /A lineCovPercent=%lineCov:~2,2%
+                                set /A branchCovPercent=%branchCov:~2,2%
+
+                                echo Line coverage: %lineCovPercent% %
+                                echo Branch coverage: %branchCovPercent% %
+
+                                REM Evaluar thresholds
+                                if %lineCovPercent% LSS 85 exit /b 2
+                                if %lineCovPercent% GEQ 85 if %lineCovPercent% LEQ 94 exit /b 1
+
+                                if %branchCovPercent% LSS 80 exit /b 2
+                                if %branchCovPercent% GEQ 80 if %branchCovPercent% LEQ 89 exit /b 1
+
+                                exit /b 0
                             """
                         }
                     }
