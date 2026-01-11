@@ -11,9 +11,9 @@ pipeline {
         stage('Setup') {
             steps {
                 bat """
-                    REM Crear virtualenv solo una vez
+                    REM Crear virtualenv
                     python -m venv %VENV%
-                    %VENV%\\Scripts\\pip.exe install --upgrade pip
+                    %VENV%\\Scripts\\python.exe -m pip install --upgrade pip
                 """
             }
         }
