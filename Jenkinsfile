@@ -113,7 +113,6 @@ pipeline {
 
     post {
         always {
-            # Limpiar virtualenv al final
             sh 'rm -rf venv'
         }
     }
