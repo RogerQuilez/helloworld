@@ -105,19 +105,14 @@ pipeline {
                         catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                             unstash name:'code'
                             bat """
-                                REM Usar el coverage.xml generado por las pruebas unitarias
-                                REM Extraer porcentaje de lineas
-                                for /F "tokens=2 delims==\"" %%L in ('findstr /R "<line-rate>" coverage.xml') do set /A lineCovPercent=%%L*100
+                                REM Extraer porcentaje de lineas con PowerShell
+                                for /f %%L in ('powershell -Command "(Select-Xml -Path coverage.xml -XPath '//coverage').Node.'line-rate' * 100"') do set lineCovPercent=%%L
+                                for /f %%L in ('powershell -Command "(Select-Xml -Path coverage.xml -XPath '//coverage').Node.'branch-rate' * 100"') do set branchCovPercent=%%L
 
-                                REM Extraer porcentaje de ramas
-                                for /F "tokens=2 delims==\"" %%L in ('findstr /R "<branch-rate>" coverage.xml') do set /A branchCovPercent=%%L*100
-
-                                REM Inicializar estados
                                 set exitCode=0
                                 set lineStatus=GREEN
                                 set branchStatus=GREEN
 
-                                REM Evaluar coverage de lineas
                                 if %lineCovPercent% LSS 85 (
                                     set exitCode=2
                                     set lineStatus=RED
@@ -126,7 +121,6 @@ pipeline {
                                     set lineStatus=UNSTABLE
                                 )
 
-                                REM Evaluar coverage de ramas
                                 if %branchCovPercent% LSS 80 (
                                     set exitCode=2
                                     set branchStatus=RED
@@ -135,11 +129,9 @@ pipeline {
                                     set branchStatus=UNSTABLE
                                 )
 
-                                REM Mostrar resultados
                                 echo Cobertura lineas: %lineCovPercent%% (%lineStatus%)
                                 echo Cobertura ramas: %branchCovPercent%% (%branchStatus%)
 
-                                REM Devolver código de salida según thresholds
                                 exit /b %exitCode%
                             """
                         }
