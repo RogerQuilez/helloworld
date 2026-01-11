@@ -6,7 +6,7 @@ pipeline {
      stages {
         stage('Get Code') {
             steps {
-                git 'https://github.com/RogerQuilez/helloworld'
+                git 'https://github.com/RogerQuilez/helloworld.git'
 	            echo WORKSPACE
                 bat 'dir'
                 stash name:'code', includes:'**'
