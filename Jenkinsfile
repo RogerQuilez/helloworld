@@ -29,7 +29,7 @@ pipeline {
                             bat """
                                 dir
                                 set PYTHONPATH=%WORKSPACE%
-                                C:\\Users\\rogerqp\\AppData\\Local\\Programs\\Python\\Python311\\Scripts\\pytest.exe --junitxml=result-unit.xml test\\unit
+                                C:\\Python311\\Scripts\\pytest.exe --junitxml=result-unit.xml test\\unit
                             """
                             stash name:'unit-res', includes:'result-unit.xml'
                         }
@@ -43,7 +43,7 @@ pipeline {
                             unstash name:'code'
                             bat """
                                 set FLASK_APP=app\\api.py
-                                start /B C:\\Users\\rogerqp\\AppData\\Local\\Programs\\Python\\Python311\\Scripts\\flask.exe run
+                                start /B C:\\Python311\\Scripts\\flask.exe run
 
                                 timeout /t 4
 
@@ -52,7 +52,7 @@ pipeline {
                                 set PYTHONPATH=%WORKSPACE%
                                 timeout /t 15
 
-                                C:\\Users\\rogerqp\\AppData\\Local\\Programs\\Python\\Python311\\Scripts\\pytest.exe --junitxml=result-rest.xml test\\rest
+                                C:\\Python311\\Scripts\\pytest.exe --junitxml=result-rest.xml test\\rest
                             """
                             stash name:'rest-res', includes:'result-rest.xml'
                         }
