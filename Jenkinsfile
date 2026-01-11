@@ -11,9 +11,11 @@ pipeline {
         stage('Setup') {
             steps {
                 bat """
-                    REM Crear virtualenv
+                    REM Crear virtualenv y actualizar pip
                     python -m venv %VENV%
                     %VENV%\\Scripts\\python.exe -m pip install --upgrade pip
+                    REM Instalar todas las dependencias necesarias
+                    %VENV%\\Scripts\\python.exe -m pip install pytest requests flake8 bandit coverage
                 """
             }
         }
@@ -21,8 +23,7 @@ pipeline {
         stage('Unit Tests') {
             steps {
                 bat """
-                    REM Instalar pytest y ejecutar tests unitarios
-                    %VENV%\\Scripts\\python.exe -m pip install pytest
+                    REM Ejecutar tests unitarios
                     %VENV%\\Scripts\\python.exe -m pytest test\\unit --junitxml="%CD%\\unit-results.xml"
                 """
             }
@@ -33,11 +34,21 @@ pipeline {
             }
         }
 
+        stage('Start App') {
+            steps {
+                bat """
+                    REM Levantar la app Flask en background
+                    start /B %VENV%\\Scripts\\python.exe app\\app.py
+                    REM Esperar unos segundos para que el servidor arranque
+                    timeout /t 5 /nobreak
+                """
+            }
+        }
+
         stage('REST Tests') {
             steps {
                 bat """
-                    REM Instalar pytest y requests y ejecutar tests REST
-                    %VENV%\\Scripts\\python.exe -m pip install pytest requests
+                    REM Ejecutar tests REST
                     %VENV%\\Scripts\\python.exe -m pytest test\\rest --junitxml="%CD%\\rest-results.xml"
                 """
             }
@@ -48,11 +59,19 @@ pipeline {
             }
         }
 
+        stage('Stop App') {
+            steps {
+                bat """
+                    REM Detener la app Flask levantada en background
+                    taskkill /IM python.exe /F
+                """
+            }
+        }
+
         stage('Static Analysis') {
             steps {
                 bat """
-                    REM Instalar flake8 y analizar código
-                    %VENV%\\Scripts\\python.exe -m pip install flake8
+                    REM Analizar código con flake8
                     %VENV%\\Scripts\\python.exe -m flake8 app
                 """
             }
@@ -61,8 +80,7 @@ pipeline {
         stage('Security Test') {
             steps {
                 bat """
-                    REM Instalar bandit y analizar seguridad
-                    %VENV%\\Scripts\\python.exe -m pip install bandit
+                    REM Analizar seguridad con bandit
                     %VENV%\\Scripts\\bandit -r app
                 """
             }
@@ -90,8 +108,7 @@ pipeline {
         stage('Coverage') {
             steps {
                 bat """
-                    REM Instalar coverage y generar reporte
-                    %VENV%\\Scripts\\python.exe -m pip install coverage pytest
+                    REM Generar reporte de coverage
                     %VENV%\\Scripts\\python.exe -m coverage run -m pytest
                     %VENV%\\Scripts\\python.exe -m coverage html
                 """
