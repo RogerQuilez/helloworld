@@ -47,10 +47,10 @@ pipeline {
 
                                 timeout /t 4
 
-                                start /B java -jar C:\\Users\\rogerqp\\wiremock\\wiremock-standalone-3.3.1.jar --port 9090 --root-dir C:\\Users\\rogerqp\\wiremock
+                                start /B java -jar C:\\Users\\rogerqp\\wiremock\\wiremock-standalone-3.13.2.jar --port 9090 --root-dir C:\\Users\\rogerqp\\wiremock
 
                                 set PYTHONPATH=%WORKSPACE%
-                                timeout /t 15
+                                ping 127.0.0.1 -n 16 > nul
 
                                 C:\\Python311\\Scripts\\pytest.exe --junitxml=result-rest.xml test\\rest
                             """
