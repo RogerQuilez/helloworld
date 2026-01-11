@@ -103,36 +103,30 @@ pipeline {
                     agent { label 'windows-agent' }
                     steps {
                         catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-                            unstash name:'code'
+                            unstash name: 'code'
                             bat """
-                                REM Extraer porcentaje de lineas con PowerShell
-                                for /f %%L in ('powershell -Command "(Select-Xml -Path coverage.xml -XPath '//coverage').Node.'line-rate' * 100"') do set lineCovPercent=%%L
-                                for /f %%L in ('powershell -Command "(Select-Xml -Path coverage.xml -XPath '//coverage').Node.'branch-rate' * 100"') do set branchCovPercent=%%L
+                                REM Ejecutar pruebas unitarias (ya hechas antes) con coverage generado
+                                REM Usar PowerShell para leer coverage.xml y aplicar thresholds
+                                powershell -NoProfile -Command "
+                                $xml = [xml](Get-Content 'coverage.xml');
+                                $line = [math]::Round(($xml.coverage.'line-rate' * 100),0);
+                                $branch = [math]::Round(($xml.coverage.'branch-rate' * 100),0);
 
-                                set exitCode=0
-                                set lineStatus=GREEN
-                                set branchStatus=GREEN
+                                $exitCode = 0
+                                $lineStatus = 'GREEN'
+                                $branchStatus = 'GREEN'
 
-                                if %lineCovPercent% LSS 85 (
-                                    set exitCode=2
-                                    set lineStatus=RED
-                                ) else if %lineCovPercent% LEQ 95 (
-                                    set exitCode=1
-                                    set lineStatus=UNSTABLE
-                                )
+                                if ($line -lt 85) { $exitCode = 2; $lineStatus='RED' }
+                                elseif ($line -le 95) { $exitCode = 1; $lineStatus='UNSTABLE' }
 
-                                if %branchCovPercent% LSS 80 (
-                                    set exitCode=2
-                                    set branchStatus=RED
-                                ) else if %branchCovPercent% LEQ 90 (
-                                    if %exitCode% NEQ 2 set exitCode=1
-                                    set branchStatus=UNSTABLE
-                                )
+                                if ($branch -lt 80) { $exitCode = 2; $branchStatus='RED' }
+                                elseif ($branch -le 90) { if ($exitCode -ne 2) { $exitCode=1 }; $branchStatus='UNSTABLE' }
 
-                                echo Cobertura lineas: %lineCovPercent%% (%lineStatus%)
-                                echo Cobertura ramas: %branchCovPercent%% (%branchStatus%)
+                                Write-Output \"Cobertura lineas: $line% ($lineStatus)\"
+                                Write-Output \"Cobertura ramas: $branch% ($branchStatus)\"
 
-                                exit /b %exitCode%
+                                exit $exitCode
+                                "
                             """
                         }
                     }
