@@ -22,7 +22,7 @@ pipeline {
         stage('Tests') {
             parallel {
                 stage('Unit') {
-                    agent { label 'linux-agent' } // en realidad es Windows
+                    agent { label 'windows-agent' }
                     steps {
                         catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                             unstash name:'code'
@@ -37,7 +37,7 @@ pipeline {
                 }
 
                 stage('Rest') {
-                    agent { label 'linux-agent' } // en realidad es Windows
+                    agent { label 'windows-agent' } // en realidad es Windows
                     steps {
                         catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                             unstash name:'code'
