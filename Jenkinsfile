@@ -40,7 +40,7 @@ pipeline {
 
 
                 stage('Rest') {
-                    agent {label 'agent2'}
+                    agent {label 'agent1'}
                     steps {
                       catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                         unstash name:'code'
