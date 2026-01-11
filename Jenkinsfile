@@ -47,7 +47,7 @@ pipeline {
 
                                 timeout /t 4
 
-                                start /B java -jar C:\\Users\\rogerqp\\wiremock\\wiremock-standalone-3.13.2.jar --port 9090 --root-dir C:\\Users\\rogerqp\\wiremock
+                                start /B java -jar C:\Users\rogerqp\wiremock\wiremock-standalone-3.3.1.jar --port 9090 --root-dir "%WORKSPACE%\test\wiremock"
 
                                 set PYTHONPATH=%WORKSPACE%
                                 ping 127.0.0.1 -n 16 > nul
