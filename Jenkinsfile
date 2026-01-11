@@ -23,7 +23,7 @@ pipeline {
                 bat """
                     REM Instalar pytest y ejecutar tests unitarios
                     %VENV%\\Scripts\\pip.exe install pytest
-                    %VENV%\\Scripts\\python.exe -m pytest test\\unit --junitxml=%CD%\\unit-results.xml
+                    %VENV%\\Scripts\\python.exe -m pytest test\\unit --junitxml="%CD%\\unit-results.xml"
                 """
             }
             post {
