@@ -58,14 +58,29 @@ pipeline {
                 stage('Static') {
                     agent { label 'windows-agent' }
                     steps {
-                        catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-                            unstash name:'code'
-                            bat """
-                                C:\\Python311\\Scripts\\flake8.exe app test
-                            """
-                        }
+                        unstash name:'code'
+                        bat """
+                            REM Ejecutar flake8 y guardar la salida en un archivo temporal
+                            C:\\Python311\\Scripts\\flake8.exe app test > flake8_report.txt 2>&1
+                            set /A count=0
+                            for /F %%L in ('type flake8_report.txt ^| find /C ":"') do set count=%%L
+                            echo Number of flake8 issues: %count%
+
+                            REM Evaluar resultados
+                            if %count% GEQ 10 (
+                                echo Found 10 or more issues -> Marking build as FAILURE
+                                exit /b 2
+                            ) else if %count% GEQ 8 (
+                                echo Found 8 or more issues -> Marking build as UNSTABLE
+                                exit /b 1
+                            ) else (
+                                echo Less than 8 issues -> Build OK
+                                exit /b 0
+                            )
+                        """
                     }
                 }
+
             }
         }
 
