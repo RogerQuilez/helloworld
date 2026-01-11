@@ -105,20 +105,24 @@ pipeline {
                         catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                             unstash name:'code'
                             bat """
-                                REM Generar cobertura desde unitarias
+                                REM Generar reporte de cobertura
                                 C:\\Python311\\Scripts\\coverage.exe report -m > cov_report.txt
 
-                                REM Obtener porcentaje de cobertura de líneas
+                                REM Extraer porcentaje de línea
                                 for /F "tokens=4" %%L in ('findstr /R /C:"TOTAL" cov_report.txt') do set lineCov=%%L
-                                set lineCovPercent=%lineCov:%%=%
+                                set lineCovPercent=%lineCov: %%=%
+                                if "%lineCovPercent%"=="" set lineCovPercent=0
 
+                                REM Para simplificar, branch = line
                                 set branchCovPercent=%lineCovPercent%
+                                if "%branchCovPercent%"=="" set branchCovPercent=0
 
-                                REM Evaluar thresholds
+                                REM Inicializar
                                 set exitCode=0
                                 set lineStatus=GREEN
                                 set branchStatus=GREEN
 
+                                REM Evaluar líneas
                                 if %lineCovPercent% LSS 85 (
                                     set exitCode=2
                                     set lineStatus=RED
@@ -127,6 +131,7 @@ pipeline {
                                     set lineStatus=UNSTABLE
                                 )
 
+                                REM Evaluar ramas
                                 if %branchCovPercent% LSS 80 (
                                     set exitCode=2
                                     set branchStatus=RED
@@ -135,7 +140,6 @@ pipeline {
                                     set branchStatus=UNSTABLE
                                 )
 
-                                REM Mostrar resultado simple
                                 echo Cobertura lineas: %lineCovPercent%% (%lineStatus%)
                                 echo Cobertura ramas: %branchCovPercent%% (%branchStatus%)
 
