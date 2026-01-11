@@ -51,7 +51,7 @@ pipeline {
 
 
                                 set PYTHONPATH=%WORKSPACE%
-                                ping 127.0.0.1 -n 16 > nul
+                                ping 127.0.0.1 -n 40 > nul
 
                                 C:\\Python311\\Scripts\\pytest.exe --junitxml=result-rest.xml test\\rest
                             """
