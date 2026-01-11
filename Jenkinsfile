@@ -105,39 +105,39 @@ pipeline {
                         catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                             unstash name:'code'
                             bat """
-                                REM -------------------------------
-                                REM Generar reporte de cobertura
-                                REM -------------------------------
+                                REM Generar cobertura desde unitarias
                                 C:\\Python311\\Scripts\\coverage.exe report -m > cov_report.txt
 
-                                REM -------------------------------
-                                REM Extraer porcentaje de line coverage
-                                REM -------------------------------
+                                REM Obtener porcentaje de cobertura de líneas
                                 for /F "tokens=4" %%L in ('findstr /R /C:"TOTAL" cov_report.txt') do set lineCov=%%L
-
-                                REM -------------------------------
-                                REM Extraer porcentaje de branch coverage
-                                REM -------------------------------
-                                REM Para simplificar vamos a usar el mismo lineCov si no tenemos branch coverage
-                                set branchCov=%lineCov%
-
-                                REM Quitar % y convertir a número
                                 set lineCovPercent=%lineCov:%%=%
-                                set branchCovPercent=%branchCov:%%=%
 
-                                echo Cobertura lineas: %lineCovPercent%%
-                                echo Cobertura ramas: %branchCovPercent%%
+                                set branchCovPercent=%lineCovPercent%
 
-                                REM -------------------------------
                                 REM Evaluar thresholds
-                                REM -------------------------------
                                 set exitCode=0
+                                set lineStatus=GREEN
+                                set branchStatus=GREEN
 
-                                if %lineCovPercent% LSS 85 set exitCode=2
-                                if %lineCovPercent% GEQ 85 if %lineCovPercent% LEQ 94 set exitCode=1
+                                if %lineCovPercent% LSS 85 (
+                                    set exitCode=2
+                                    set lineStatus=RED
+                                ) else if %lineCovPercent% LEQ 94 (
+                                    set exitCode=1
+                                    set lineStatus=UNSTABLE
+                                )
 
-                                if %branchCovPercent% LSS 80 set exitCode=2
-                                if %branchCovPercent% GEQ 80 if %branchCovPercent% LEQ 89 set exitCode=1
+                                if %branchCovPercent% LSS 80 (
+                                    set exitCode=2
+                                    set branchStatus=RED
+                                ) else if %branchCovPercent% LEQ 89 (
+                                    if %exitCode% NEQ 2 set exitCode=1
+                                    set branchStatus=UNSTABLE
+                                )
+
+                                REM Mostrar resultado simple
+                                echo Cobertura lineas: %lineCovPercent%% (%lineStatus%)
+                                echo Cobertura ramas: %branchCovPercent%% (%branchStatus%)
 
                                 exit /b %exitCode%
                             """
