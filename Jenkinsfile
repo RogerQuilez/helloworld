@@ -1,136 +1,77 @@
 pipeline {
     agent any
 
-    environment {
-        VENV = "venv"
-        JMETER_HOME = "C:\\apache-jmeter-5.6.3"
-    }
+    options { skipDefaultCheckout() }
 
-    stages {
-
-        stage('Setup') {
+     stages {
+        stage('Get Code') {
             steps {
-                bat """
-                    REM Crear virtualenv y actualizar pip
-                    python -m venv %VENV%
-                    %VENV%\\Scripts\\python.exe -m pip install --upgrade pip
-                    REM Instalar todas las dependencias necesarias
-                    %VENV%\\Scripts\\python.exe -m pip install pytest requests flake8 bandit coverage flask
-                """
+                git 'https://github.com/RogerQuilez/helloworld'
+	            echo WORKSPACE
+                bat 'dir'
+                stash name:'code', includes:'**'
             }
         }
 
-        stage('Unit Tests') {
-            steps {
-                bat """
-                    REM Ejecutar tests unitarios
-                    %VENV%\\Scripts\\python.exe -m pytest test\\unit --junitxml="%CD%\\unit-results.xml"
-                """
-            }
-            post {
-                always {
-                    junit 'unit-results.xml'
+        stage('Build') {
+           steps {
+              echo 'Eyyy, esto es Python. No hay que compilar nada!!!'
+           }
+        }
+
+        stage('Tests')
+        {
+            parallel
+            {
+                stage('Unit') {
+                    agent {label 'agent1'}
+                    steps {
+                        catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+                            unstash name:'code'
+                            sh '''
+                                ls -la
+                                export PYTHONPATH=${WORKSPACE}
+                                /home/agent1/.local/bin/pytest --junitxml=result-unit.xml test/unit
+                            '''
+                            stash name:'unit-res', includes:'result-unit.xml'
+                       }
+                    }
                 }
-            }
-        }
 
-        stage('Start App') {
-            steps {
-                bat """
-                    REM Levantar la app Flask en background usando virtualenv y PYTHONPATH
-                    start "" /B cmd /c "set PYTHONPATH=%CD% && %VENV%\\Scripts\\python.exe app\\api.py"
-                    REM Esperar unos segundos para que el servidor arranque
-                    ping 127.0.0.1 -n 6 >nul
-                """
-            }
-        }
 
-        stage('REST Tests') {
-            steps {
-                bat """
-                    REM Ejecutar tests REST
-                    %VENV%\\Scripts\\python.exe -m pytest test\\rest --junitxml="%CD%\\rest-results.xml"
-                """
-            }
-            post {
-                always {
-                    junit 'rest-results.xml'
+                stage('Rest') {
+                    agent {label 'agent2'}
+                    steps {
+                      catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+                        unstash name:'code'
+                        sh '''
+                            export FLASK_APP=app/api.py
+                            /home/agent2/.local/bin/flask run &
+
+                            sleep 4
+
+                            java -jar /home/agent2/wiremock/wiremock-standalone-3.3.1.jar --port 9090 --root-dir /home/agent2/wiremock &
+                            export PYTHONPATH=${WORKSPACE}
+
+                            sleep 15
+
+                            /home/agent2/.local/bin/pytest --junitxml=result-rest.xml test/rest
+                        '''
+                      }
+                      stash name:'rest-res', includes:'result-rest.xml'
+                    }
                 }
+
             }
         }
 
-        stage('Stop App') {
+        stage('Results') {
             steps {
-                bat """
-                    REM Detener la app Flask levantada en background
-                    taskkill /IM python.exe /F
-                """
+                unstash name:'unit-res'
+                unstash name:'rest-res'
+                junit 'result*.xml'
             }
         }
 
-        stage('Static Analysis') {
-            steps {
-                bat """
-                    REM Analizar código con flake8
-                    %VENV%\\Scripts\\python.exe -m flake8 app
-                """
-            }
-        }
-
-        stage('Security Test') {
-            steps {
-                bat """
-                    REM Analizar seguridad con bandit
-                    %VENV%\\Scripts\\bandit -r app
-                """
-            }
-        }
-
-        stage('Performance') {
-            steps {
-                bat """
-                    REM Ejecutar tests de rendimiento con JMeter
-                    mkdir jmeter-results
-                    "%JMETER_HOME%\\bin\\jmeter.bat" -n -t test\\jmeter\\flask.jmx -l jmeter-results\\results.jtl -e -o jmeter-results\\report
-                """
-            }
-            post {
-                always {
-                    publishHTML([
-                        reportDir: 'jmeter-results\\report',
-                        reportFiles: 'index.html',
-                        reportName: 'JMeter Performance Report'
-                    ])
-                }
-            }
-        }
-
-        stage('Coverage') {
-            steps {
-                bat """
-                    REM Generar reporte de coverage
-                    %VENV%\\Scripts\\python.exe -m coverage run -m pytest
-                    %VENV%\\Scripts\\python.exe -m coverage html
-                """
-            }
-            post {
-                always {
-                    publishHTML([
-                        reportDir: 'htmlcov',
-                        reportFiles: 'index.html',
-                        reportName: 'Coverage Report'
-                    ])
-                }
-            }
-        }
-    }
-
-    post {
-        always {
-            bat """
-                REM Limpiar virtualenv
-                rmdir /s /q %VENV%
-            """
-        }
     }
 }
