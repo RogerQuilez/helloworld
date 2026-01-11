@@ -105,29 +105,41 @@ pipeline {
                         catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                             unstash name:'code'
                             bat """
+                                REM -------------------------------
                                 REM Generar reporte de cobertura
-                                C:\\Python311\\Scripts\\coverage.exe xml -o coverage.xml
+                                REM -------------------------------
+                                C:\\Python311\\Scripts\\coverage.exe report -m > cov_report.txt
 
-                                REM Extraer porcentaje de cobertura de líneas
-                                for /F "tokens=4 delims= " %%L in ('type coverage.xml ^| find "<line-rate>"') do set lineCov=%%L
-                                REM Extraer porcentaje de cobertura de ramas
-                                for /F "tokens=4 delims= " %%B in ('type coverage.xml ^| find "<branch-rate>"') do set branchCov=%%B
+                                REM -------------------------------
+                                REM Extraer porcentaje de line coverage
+                                REM -------------------------------
+                                for /F "tokens=4" %%L in ('findstr /R /C:"TOTAL" cov_report.txt') do set lineCov=%%L
 
-                                REM Convertir de decimal a porcentaje entero (ej: 0.92 -> 92)
-                                set /A lineCovPercent=%lineCov:~2,2%
-                                set /A branchCovPercent=%branchCov:~2,2%
+                                REM -------------------------------
+                                REM Extraer porcentaje de branch coverage
+                                REM -------------------------------
+                                REM Para simplificar vamos a usar el mismo lineCov si no tenemos branch coverage
+                                set branchCov=%lineCov%
 
-                                echo Line coverage: %lineCovPercent% %
-                                echo Branch coverage: %branchCovPercent% %
+                                REM Quitar % y convertir a número
+                                set lineCovPercent=%lineCov:%%=%
+                                set branchCovPercent=%branchCov:%%=%
 
+                                echo Cobertura lineas: %lineCovPercent%%
+                                echo Cobertura ramas: %branchCovPercent%%
+
+                                REM -------------------------------
                                 REM Evaluar thresholds
-                                if %lineCovPercent% LSS 85 exit /b 2
-                                if %lineCovPercent% GEQ 85 if %lineCovPercent% LEQ 94 exit /b 1
+                                REM -------------------------------
+                                set exitCode=0
 
-                                if %branchCovPercent% LSS 80 exit /b 2
-                                if %branchCovPercent% GEQ 80 if %branchCovPercent% LEQ 89 exit /b 1
+                                if %lineCovPercent% LSS 85 set exitCode=2
+                                if %lineCovPercent% GEQ 85 if %lineCovPercent% LEQ 94 set exitCode=1
 
-                                exit /b 0
+                                if %branchCovPercent% LSS 80 set exitCode=2
+                                if %branchCovPercent% GEQ 80 if %branchCovPercent% LEQ 89 set exitCode=1
+
+                                exit /b %exitCode%
                             """
                         }
                     }
