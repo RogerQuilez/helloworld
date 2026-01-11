@@ -108,14 +108,12 @@ pipeline {
                                 REM Generar reporte de cobertura
                                 C:\\Python311\\Scripts\\coverage.exe report -m > cov_report.txt
 
-                                REM Extraer porcentaje de línea
+                                REM Extraer porcentaje de línea (sin %)
                                 for /F "tokens=4" %%L in ('findstr /R /C:"TOTAL" cov_report.txt') do set lineCov=%%L
-                                set lineCovPercent=%lineCov: %%=%
-                                if "%lineCovPercent%"=="" set lineCovPercent=0
+                                set lineCovPercent=%lineCov:%%=%
 
                                 REM Para simplificar, branch = line
                                 set branchCovPercent=%lineCovPercent%
-                                if "%branchCovPercent%"=="" set branchCovPercent=0
 
                                 REM Inicializar
                                 set exitCode=0
@@ -140,6 +138,7 @@ pipeline {
                                     set branchStatus=UNSTABLE
                                 )
 
+                                REM Mostrar resultados
                                 echo Cobertura lineas: %lineCovPercent%% (%lineStatus%)
                                 echo Cobertura ramas: %branchCovPercent%% (%branchStatus%)
 
