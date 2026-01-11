@@ -105,28 +105,18 @@ pipeline {
                         catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                             unstash name: 'code'
                             bat """
-                                REM Ejecutar pruebas unitarias (ya hechas antes) con coverage generado
-                                REM Usar PowerShell para leer coverage.xml y aplicar thresholds
-                                powershell -NoProfile -Command "
-                                $xml = [xml](Get-Content 'coverage.xml');
-                                $line = [math]::Round(($xml.coverage.'line-rate' * 100),0);
-                                $branch = [math]::Round(($xml.coverage.'branch-rate' * 100),0);
-
-                                $exitCode = 0
-                                $lineStatus = 'GREEN'
-                                $branchStatus = 'GREEN'
-
-                                if ($line -lt 85) { $exitCode = 2; $lineStatus='RED' }
-                                elseif ($line -le 95) { $exitCode = 1; $lineStatus='UNSTABLE' }
-
-                                if ($branch -lt 80) { $exitCode = 2; $branchStatus='RED' }
-                                elseif ($branch -le 90) { if ($exitCode -ne 2) { $exitCode=1 }; $branchStatus='UNSTABLE' }
-
-                                Write-Output \"Cobertura lineas: $line% ($lineStatus)\"
-                                Write-Output \"Cobertura ramas: $branch% ($branchStatus)\"
-
-                                exit $exitCode
-                                "
+                                powershell -NoProfile -Command ^
+                                "$xml = [xml](Get-Content 'coverage.xml'); ^
+                                $line = [math]::Round(($xml.coverage.'line-rate' * 100),0); ^
+                                $branch = [math]::Round(($xml.coverage.'branch-rate' * 100),0); ^
+                                $exitCode = 0; $lineStatus='GREEN'; $branchStatus='GREEN'; ^
+                                if ($line -lt 85) { $exitCode=2; $lineStatus='RED' } ^
+                                elseif ($line -le 95) { $exitCode=1; $lineStatus='UNSTABLE' } ^
+                                if ($branch -lt 80) { $exitCode=2; $branchStatus='RED' } ^
+                                elseif ($branch -le 90) { if ($exitCode -ne 2) { $exitCode=1 }; $branchStatus='UNSTABLE' } ^
+                                Write-Output \\"Cobertura lineas: $line% ($lineStatus)\\"; ^
+                                Write-Output \\"Cobertura ramas: $branch% ($branchStatus)\\"; ^
+                                exit $exitCode"
                             """
                         }
                     }
