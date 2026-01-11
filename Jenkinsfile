@@ -37,8 +37,9 @@ pipeline {
         stage('Start App') {
             steps {
                 bat """
-                    REM Levantar la app Flask en background
-                    start /B "%VENV%\\Scripts\\python.exe" -m app.api
+                    REM Añadir la raíz del proyecto al PYTHONPATH y levantar Flask
+                    set PYTHONPATH=%CD%
+                    start /B "%VENV%\\Scripts\\python.exe" "app\\api.py"
                     REM Esperar unos segundos para que el servidor arranque
                     ping 127.0.0.1 -n 6 >nul
                 """
