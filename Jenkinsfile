@@ -13,12 +13,6 @@ pipeline {
             }
         }
 
-        stage('Build') {
-            steps {
-                echo 'Eyyy, esto es Python. No hay que compilar nada!!!'
-            }
-        }
-
         stage('Tests') {
             parallel {
                 stage('Unit') {
