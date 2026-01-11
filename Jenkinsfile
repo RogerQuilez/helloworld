@@ -15,7 +15,7 @@ pipeline {
                     python -m venv %VENV%
                     %VENV%\\Scripts\\python.exe -m pip install --upgrade pip
                     REM Instalar todas las dependencias necesarias
-                    %VENV%\\Scripts\\python.exe -m pip install pytest requests flake8 bandit coverage
+                    %VENV%\\Scripts\\python.exe -m pip install pytest requests flake8 bandit coverage flask
                 """
             }
         }
@@ -40,7 +40,7 @@ pipeline {
                     REM Levantar la app Flask en background
                     start /B %VENV%\\Scripts\\python.exe app\\api.py
                     REM Esperar unos segundos para que el servidor arranque
-                    timeout /t 5 /nobreak
+                    ping 127.0.0.1 -n 6 >nul
                 """
             }
         }
