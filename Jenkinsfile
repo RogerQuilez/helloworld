@@ -71,6 +71,34 @@ pipeline {
                     }
                 }
 
+                stage('Security') {
+                    agent { label 'windows-agent' }
+                    steps {
+                        catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+                            unstash name:'code'
+                            bat """
+                                REM Ejecutar bandit
+                                C:\\Python311\\Scripts\\bandit.exe -r app test -f txt -o bandit_report.txt
+                                set /A count=0
+                                REM Contar hallazgos (cada línea con Issue)
+                                for /F %%L in ('type bandit_report.txt ^| find /C "Issue:"') do set count=%%L
+                                echo Issues de seguridad encontrados: %count%
+
+                                REM Evaluar resultados según umbrales
+                                if %count% GEQ 4 (
+                                    exit /b 2
+                                ) else (
+                                    if %count% GEQ 2 (
+                                        exit /b 1
+                                    ) else (
+                                        exit /b 0
+                                    )
+                                )
+                            """
+                        }
+                    }
+                }
+
             }
         }
     }
