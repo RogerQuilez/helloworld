@@ -105,8 +105,8 @@ pipeline {
                         catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                             unstash name: 'code'
                             bat """
-                                powershell -NoProfile -Command ^
-                                "& {
+                                REM Ejecutar script de PowerShell para leer coverage.xml y aplicar thresholds
+                                powershell -NoProfile -Command "& {
                                     \$xml = [xml](Get-Content 'coverage.xml');
                                     \$line = [math]::Round((\$xml.coverage.'line-rate' * 100),0);
                                     \$branch = [math]::Round((\$xml.coverage.'branch-rate' * 100),0);
@@ -121,8 +121,9 @@ pipeline {
                                     if (\$branch -lt 80) { \$exitCode = 2; \$branchStatus='RED' }
                                     elseif (\$branch -le 90) { if (\$exitCode -ne 2) { \$exitCode=1 }; \$branchStatus='UNSTABLE' }
 
-                                    Write-Output \\"Cobertura lineas: \$line% (\$lineStatus)\\";
-                                    Write-Output \\"Cobertura ramas: \$branch% (\$branchStatus)\\";
+                                    Write-Output ('Cobertura lineas: {0}% ({1})' -f \$line,\$lineStatus);
+                                    Write-Output ('Cobertura ramas: {0}% ({1})' -f \$branch,\$branchStatus);
+
                                     exit \$exitCode
                                 }"
                             """
