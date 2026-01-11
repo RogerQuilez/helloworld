@@ -58,18 +58,14 @@ pipeline {
                                 C:\\Python311\\Scripts\\flake8.exe app test > flake8_report.txt 2>&1
                                 set /A count=0
                                 for /F %%L in ('type flake8_report.txt ^| find /C ":"') do set count=%%L
-                                echo Number of flake8 issues: %count%
+                                echo Issues encontrados: %count%
 
-                                REM Evaluar resultados correctamente en CMD
                                 if %count% GEQ 10 (
-                                    echo Found 10 or more issues -> Marking build as FAILURE
                                     exit /b 2
                                 ) else (
                                     if %count% GEQ 8 (
-                                        echo Found 8 or more issues -> Marking build as UNSTABLE
                                         exit /b 1
                                     ) else (
-                                        echo Less than 8 issues -> Build OK
                                         exit /b 0
                                     )
                                 )
