@@ -37,7 +37,7 @@ pipeline {
                 }
 
                 stage('Rest') {
-                    agent { label 'windows-agent' } // en realidad es Windows
+                    agent { label 'windows-agent' }
                     steps {
                         catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                             unstash name:'code'
@@ -51,6 +51,18 @@ pipeline {
                                 C:\\Python311\\Scripts\\pytest.exe --junitxml=result-rest.xml test\\rest
                             """
                             stash name:'rest-res', includes:'result-rest.xml'
+                        }
+                    }
+                }
+
+                stage('Static') {
+                    agent { label 'windows-agent' }
+                    steps {
+                        catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+                            unstash name:'code'
+                            bat """
+                                C:\\Python311\\Scripts\\flake8.exe app test
+                            """
                         }
                     }
                 }
