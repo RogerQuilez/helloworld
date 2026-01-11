@@ -107,8 +107,9 @@ pipeline {
                             bat """
                                 REM Crear script PowerShell temporal
                                 echo \$xml = [xml](Get-Content 'coverage.xml') > check_coverage.ps1
-                                echo \$line = [math]::Round((\$xml.coverage.'line-rate' * 100),0) >> check_coverage.ps1
-                                echo \$branch = [math]::Round((\$xml.coverage.'branch-rate' * 100),0) >> check_coverage.ps1
+                                echo \$cov = \$xml.SelectSingleNode('//coverage') >> check_coverage.ps1
+                                echo \$line = [math]::Round((\$cov.'line-rate' * 100),0) >> check_coverage.ps1
+                                echo \$branch = [math]::Round((\$cov.'branch-rate' * 100),0) >> check_coverage.ps1
                                 echo \$exitCode = 0 >> check_coverage.ps1
                                 echo \$lineStatus = 'GREEN' >> check_coverage.ps1
                                 echo \$branchStatus = 'GREEN' >> check_coverage.ps1
