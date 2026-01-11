@@ -77,13 +77,5 @@ pipeline {
 
             }
         }
-
-        stage('Results') {
-            steps {
-                unstash name:'unit-res'
-                unstash name:'rest-res'
-                junit 'result*.xml'
-            }
-        }
     }
 }
