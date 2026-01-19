@@ -9,7 +9,7 @@ pipeline {
         stage('Get Code') {
             agent { label 'master' }
             steps {
-                git 'https://github.com/RogerQuilez/helloworld.git'
+                checkout scm
                 echo "WORKSPACE = ${env.WORKSPACE}"
                 bat 'dir'
                 stash name:'code', includes:'**'
