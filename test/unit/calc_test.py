@@ -61,6 +61,24 @@ class TestCalculate(unittest.TestCase):
         self.assertEqual(0, self.calc.substract(0, 0))
         self.assertEqual(0, self.calc.substract(0, 0))
         self.assertRaises(TypeError, self.calc.substract, "0", 0)
+
+    def test_divide_by_zero_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            self.calc.divide(10, 0)
+
+    def test_check_types_with_valid_numbers(self):
+        self.calc.check_types(1, 2)
+        self.calc.check_types(1.5, 2.3)
+        self.calc.check_types(-1, 0)
+
+    def test_check_types_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            self.calc.check_types("1", 2)
+
+    def test_invalid_permissions_exception(self):
+        from app.calc import InvalidPermissions
+        with self.assertRaises(InvalidPermissions):
+            raise InvalidPermissions("No permissions")
         
 if __name__ == "__main__":  # pragma: no cover
     unittest.main()
