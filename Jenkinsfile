@@ -23,6 +23,10 @@ pipeline {
                     steps {
                         unstash name:'code'
                         bat """
+                            whoami
+                            hostname
+                            echo WORKSPACE=%WORKSPACE%
+
                             dir
                             set PYTHONPATH=%WORKSPACE%
                             REM Ejecutar pytest unitarias, pero siempre devolver 0 para que la etapa quede verde
@@ -37,6 +41,9 @@ pipeline {
                     steps {
                         unstash name:'code'
                         bat """
+                            whoami
+                            hostname
+                            echo WORKSPACE=%WORKSPACE%
                             set FLASK_APP=app\\api.py
                             start /B C:\\Python311\\Scripts\\flask.exe run
                             ping 127.0.0.1 -n 16 > nul
@@ -55,6 +62,10 @@ pipeline {
                         catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                             unstash name:'code'
                             bat """
+                                whoami
+                                hostname
+                                echo WORKSPACE=%WORKSPACE%
+
                                 C:\\Python311\\Scripts\\flake8.exe app test > flake8_report.txt 2>&1
                                 set /A count=0
                                 for /F %%L in ('type flake8_report.txt ^| find /C ":"') do set count=%%L
@@ -79,6 +90,10 @@ pipeline {
                         catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                             unstash name:'code'
                             bat """
+                                whoami
+                                hostname
+                                echo WORKSPACE=%WORKSPACE%
+
                                 REM Ejecutar bandit
                                 C:\\Python311\\Scripts\\bandit.exe -r app test -f txt -o bandit_report.txt
                                 set /A count=0
@@ -106,6 +121,10 @@ pipeline {
                         catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                             unstash name: 'code'
                             bat """
+                                whoami
+                                hostname
+                                echo WORKSPACE=%WORKSPACE%
+
                                 REM Crear script PowerShell temporal
                                 echo \$xml = [xml](Get-Content 'coverage.xml') > check_coverage.ps1
                                 echo \$cov = \$xml.SelectSingleNode('//coverage') >> check_coverage.ps1
@@ -135,6 +154,10 @@ pipeline {
                         catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                             unstash name: 'code'
                             bat """
+                                whoami
+                                hostname
+                                echo WORKSPACE=%WORKSPACE%
+
                                 REM Crear el directorio si no existe
                                 if not exist test\\performance mkdir test\\performance
                                 REM Verificar que el test-plan existe antes de ejecutar JMeter
