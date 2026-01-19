@@ -1,5 +1,9 @@
 pipeline {
-    agent any
+    agent none
+
+    options {
+            skipDefaultCheckout(true)
+        }
 
     stages {
         stage('Get Code') {
